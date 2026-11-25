@@ -1,0 +1,11 @@
+import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
+export type ChatMode = 'video'|'audio'|'text';
+type Prefs = { mode:ChatMode; gender:string; preference:string; region:string; interests:string[]; premium:boolean };
+const initial:Prefs = { mode:'video', gender:'Prefer not to say', preference:'Any', region:'Any', interests:[], premium:false };
+const prefs = createSlice({ name:'preferences', initialState:initial, reducers:{ setPrefs:(s,a:PayloadAction<Partial<Prefs>>)=>({...s,...a.payload}), toggleInterest:(s,a:PayloadAction<string>)=>{s.interests=s.interests.includes(a.payload)?s.interests.filter(x=>x!==a.payload):[...s.interests,a.payload]} } });
+export const { setPrefs, toggleInterest } = prefs.actions;
+export const backendApi = createApi({ reducerPath:'backendApi', baseQuery:fakeBaseQuery<string>(), endpoints: b=>({ backendStatus:b.query<{configured:boolean},void>({ queryFn:async()=>({data:{configured:Boolean(import.meta.env.VITE_SUPABASE_URL&&import.meta.env.VITE_SUPABASE_ANON_KEY)}}) }) }) });
+export const { useBackendStatusQuery } = backendApi;
+export const store = configureStore({ reducer:{preferences:prefs.reducer,[backendApi.reducerPath]:backendApi.reducer}, middleware:g=>g().concat(backendApi.middleware) });
+export type RootState=ReturnType<typeof store.getState>;
